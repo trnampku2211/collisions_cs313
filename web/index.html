@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Bản đồ điểm nóng va chạm giao thông NYC bằng DBSCAN" />
+    <title>NYC Crash Hotspots · DBSCAN</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Bộ lọc và danh sách điểm nóng">
+        <header class="brand">
+          <p class="eyebrow">NYC MOTOR VEHICLE COLLISIONS</p>
+          <h1>Crash hotspots</h1>
+          <p class="subtitle">Phân cụm vị trí va chạm bằng DBSCAN trên bản đồ đường phố NYC.</p>
+        </header>
+
+        <section class="control-section" aria-labelledby="filter-heading">
+          <h2 id="filter-heading">Khám phá dữ liệu</h2>
+          <fieldset class="period-fieldset">
+            <legend>Giai đoạn</legend>
+            <label class="period-option"><input type="checkbox" id="period-before" checked /> <span class="swatch swatch-blue"></span> 2017–2019</label>
+            <label class="period-option"><input type="checkbox" id="period-after" checked /> <span class="swatch swatch-red"></span> 2020–2022</label>
+          </fieldset>
+
+          <div class="form-row">
+            <label for="min-crashes">Ít nhất bao nhiêu vụ/cụm?</label>
+            <input id="min-crashes" type="number" min="0" step="25" value="100" inputmode="numeric" />
+          </div>
+
+          <div class="form-row">
+            <label for="sort-metric">Xếp theo</label>
+            <select id="sort-metric">
+              <option value="crashes">Số vụ</option>
+              <option value="injured">Số người bị thương</option>
+              <option value="killed">Số người tử vong</option>
+              <option value="injured_per_100_crashes">Người bị thương / 100 vụ</option>
+              <option value="vulnerable_crash_pct">Vụ liên quan pedestrian/cyclist (%)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="display-limit">Hiện tối đa</label>
+            <select id="display-limit">
+              <option value="50">50 cụm / giai đoạn</option>
+              <option value="100" selected>100 cụm / giai đoạn</option>
+              <option value="300">300 cụm / giai đoạn</option>
+              <option value="all">Tất cả cụm</option>
+            </select>
+          </div>
+
+          <label class="check-row"><input type="checkbox" id="fatal-only" /> Chỉ cụm có tử vong</label>
+        </section>
+
+        <section class="summary-section" aria-label="Tóm tắt kết quả">
+          <p id="result-count" class="result-count" aria-live="polite">Đang tải dữ liệu…</p>
+          <p class="summary-note">Vòng tròn đặt tại tọa độ va chạm gần tâm cụm nhất, không phải ranh giới hotspot. Bấm một cụm để xem các vị trí tai nạn thuộc cụm đó.</p>
+        </section>
+
+        <section class="list-section" aria-labelledby="list-heading">
+          <h2 id="list-heading">Cụm nổi bật</h2>
+          <ol id="cluster-list" class="cluster-list"></ol>
+        </section>
+
+        <footer class="sidebar-footer">
+          <p>Dữ liệu: NYPD Motor Vehicle Collisions · Crashes. Tên đường là giá trị được ghi nhận nhiều nhất trong mỗi cụm.</p>
+        </footer>
+      </aside>
+
+      <section class="map-panel" aria-label="Bản đồ điểm nóng giao thông NYC">
+        <div id="map" role="application" aria-label="Bản đồ Leaflet điểm nóng NYC"></div>
+        <div class="map-caption" aria-hidden="true">
+          <span class="caption-dot caption-blue"></span> 2017–2019
+          <span class="caption-dot caption-red"></span> 2020–2022
+          <span class="caption-hint">Kích thước vòng tròn ∝ căn bậc hai số vụ</span>
+        </div>
+        <div id="loading-state" class="loading-state" role="status">Đang nạp GeoJSON…</div>
+        <div id="error-state" class="error-state" role="alert" hidden></div>
+        <div id="detail-note" class="detail-note" hidden></div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/dist/leaflet-maplibre-gl.js"></script>
+    <script src="data/bundle.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+numpy>=2.0
+pandas>=3.0
+pyarrow>=20.0
+PyYAML>=6.0
+scikit-learn>=1.7
+scipy>=1.15
+matplotlib>=3.10
+folium>=0.20
+

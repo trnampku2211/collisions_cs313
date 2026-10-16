@@ -1,0 +1,37 @@
+data:
+  input_path: Motor_Vehicle_Collisions_-_Crashes.csv
+  cache_path: data/interim/crashes_2017_2022.parquet
+  start_date: "2017-01-01"
+  end_date: "2022-12-31"
+  chunksize: 200000
+
+geospatial:
+  min_lat: 40.3
+  max_lat: 41.1
+  min_lon: -74.5
+  max_lon: -73.5
+  coordinate_precision: 4
+
+dbscan:
+  # Shared parameters keep the two periods directly comparable. The full-data
+  # grid showed that 150 m / 20 merged more than 40% of clustered crashes into
+  # one component; 100 m / 30 gives a more useful hotspot segmentation.
+  eps_m: 100
+  min_samples: 30
+  eps_grid_m: [75, 100, 150, 200, 300]
+  min_samples_grid: [10, 20, 30, 50]
+
+analysis:
+  periods:
+    - name: "2017-2019"
+      start_year: 2017
+      end_year: 2019
+    - name: "2020-2022"
+      start_year: 2020
+      end_year: 2022
+  minimum_crashes_for_severity_ranking: 100
+  top_clusters: 20
+
+output:
+  root: outputs
+
