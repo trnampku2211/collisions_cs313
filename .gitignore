@@ -4,6 +4,27 @@ __pycache__/
 .venv/
 Motor_Vehicle_Collisions_-_Crashes.csv
 
+# Local documentation and LaTeX report artifacts
+.doc_build/
+*.doc
+*.docx
+*.tex
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*Overleaf*.zip
+CS331_Group8_NYC_App1/
+
 data/interim/*
 data/processed/*
 outputs/figures/*

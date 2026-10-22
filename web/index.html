@@ -25,8 +25,23 @@
 
         <section class="control-section" aria-labelledby="filter-heading">
           <h2 id="filter-heading">Khám phá dữ liệu</h2>
+          <fieldset class="view-fieldset">
+            <legend>Cách tô màu</legend>
+            <div class="segmented-control">
+              <label>
+                <input type="radio" name="color-mode" value="period" checked />
+                <span>So sánh thời gian</span>
+              </label>
+              <label>
+                <input type="radio" name="color-mode" value="cluster" />
+                <span>Theo cụm DBSCAN</span>
+              </label>
+            </div>
+            <p id="color-mode-note" class="control-note">Màu xanh và đỏ phân biệt hai giai đoạn phân tích.</p>
+          </fieldset>
+
           <fieldset class="period-fieldset">
-            <legend>Giai đoạn</legend>
+            <legend id="period-legend">Giai đoạn</legend>
             <label class="period-option"><input type="checkbox" id="period-before" checked /> <span class="swatch swatch-blue"></span> 2017–2019</label>
             <label class="period-option"><input type="checkbox" id="period-after" checked /> <span class="swatch swatch-red"></span> 2020–2022</label>
           </fieldset>
@@ -62,7 +77,7 @@
 
         <section class="summary-section" aria-label="Tóm tắt kết quả">
           <p id="result-count" class="result-count" aria-live="polite">Đang tải dữ liệu…</p>
-          <p class="summary-note">Vòng tròn đặt tại tọa độ va chạm gần tâm cụm nhất, không phải ranh giới hotspot. Bấm một cụm để xem các vị trí tai nạn thuộc cụm đó.</p>
+          <p id="summary-note" class="summary-note">Vòng tròn đặt tại tọa độ va chạm gần tâm cụm nhất, không phải ranh giới hotspot. Bấm một cụm để xem các vị trí tai nạn thuộc cụm đó.</p>
         </section>
 
         <section class="list-section" aria-labelledby="list-heading">
@@ -77,7 +92,7 @@
 
       <section class="map-panel" aria-label="Bản đồ điểm nóng giao thông NYC">
         <div id="map" role="application" aria-label="Bản đồ Leaflet điểm nóng NYC"></div>
-        <div class="map-caption" aria-hidden="true">
+        <div id="map-caption" class="map-caption" aria-hidden="true">
           <span class="caption-dot caption-blue"></span> 2017–2019
           <span class="caption-dot caption-red"></span> 2020–2022
           <span class="caption-hint">Kích thước vòng tròn ∝ căn bậc hai số vụ</span>
