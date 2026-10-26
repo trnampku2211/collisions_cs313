@@ -21,12 +21,12 @@ class GeoJsonExportTests(unittest.TestCase):
         )
         locations = pd.DataFrame(
             {
-                "lat_round": [40.7000, 40.7001],
-                "lon_round": [-74.0000, -74.0001],
-                "cluster": [5, 5],
-                "crash_count": [2, 1],
-                "injured": [1, 0],
-                "killed": [0, 0],
+                "lat_round": [40.7000, 40.7001, 40.7100],
+                "lon_round": [-74.0000, -74.0001, -74.0100],
+                "cluster": [5, 5, -1],
+                "crash_count": [2, 1, 4],
+                "injured": [1, 0, 2],
+                "killed": [0, 0, 1],
             }
         )
         profile = pd.DataFrame(
@@ -64,10 +64,16 @@ class GeoJsonExportTests(unittest.TestCase):
             detail = json.loads(detail_path.read_text(encoding="utf-8"))
             self.assertEqual(detail["total_locations"], 2)
             self.assertEqual(len(detail["features"]), 2)
+            noise_path = Path(temp_dir) / "noise_2017_2019.geojson"
+            noise = json.loads(noise_path.read_text(encoding="utf-8"))
+            self.assertEqual(noise["total_locations"], 1)
+            self.assertEqual(noise["total_crashes"], 4)
+            self.assertEqual(noise["features"][0]["properties"]["killed"], 1)
             bundle = export_browser_bundle(Path(temp_dir), ["2017-2019"])
             bundle_text = bundle.read_text(encoding="utf-8")
             self.assertIn('window.NYC_HOTSPOT_DATA={"2017-2019"', bundle_text)
             self.assertIn(f'"{feature["properties"]["detail_file"]}"', bundle_text)
+            self.assertIn('window.NYC_HOTSPOT_NOISE={"2017-2019"', bundle_text)
 
 
 if __name__ == "__main__":

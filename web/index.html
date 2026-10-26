@@ -48,7 +48,19 @@
 
           <div class="form-row">
             <label for="min-crashes">Ít nhất bao nhiêu vụ/cụm?</label>
-            <input id="min-crashes" type="number" min="0" step="25" value="100" inputmode="numeric" />
+            <select id="min-crashes">
+              <option value="30" selected>30 vụ</option>
+              <option value="50">50 vụ</option>
+              <option value="75">75 vụ</option>
+              <option value="100">100 vụ</option>
+              <option value="125">125 vụ</option>
+              <option value="150">150 vụ</option>
+              <option value="175">175 vụ</option>
+              <option value="200">200 vụ</option>
+              <option value="250">250 vụ</option>
+              <option value="500">500 vụ</option>
+              <option value="1000">1.000 vụ</option>
+            </select>
           </div>
 
           <div class="form-row">
@@ -73,6 +85,8 @@
           </div>
 
           <label class="check-row"><input type="checkbox" id="fatal-only" /> Chỉ cụm có tử vong</label>
+          <label class="check-row"><input type="checkbox" id="show-noise" /> Hiện điểm nhiễu DBSCAN</label>
+          <p class="control-note noise-control-note">Noise là các tọa độ không đủ mật độ để thuộc một cụm; không chịu bộ lọc số vụ/cụm.</p>
         </section>
 
         <section class="summary-section" aria-label="Tóm tắt kết quả">

@@ -60,7 +60,7 @@ Sau khi chạy pipeline, mở trực tiếp `web/index.html`. Ứng dụng nạp
 python -m http.server 8000
 ```
 
-Mở `http://localhost:8000/web/`. Bản đồ dùng nền vector OpenFreeMap (dữ liệu OpenStreetMap) qua Leaflet và MapLibre, có bộ lọc giai đoạn, số vụ tối thiểu, chỉ cụm có tử vong và cách xếp hạng. Chọn một cụm để xem các tọa độ va chạm có nhiều vụ nhất trong cụm đó. Dữ liệu chi tiết từng vị trí được xuất cho 20 cụm nhiều vụ nhất mỗi giai đoạn, tối đa 1.500 vị trí/cụm; giao diện ghi rõ khi chỉ hiện một phần. Dữ liệu vụ tai nạn lưu trên máy, còn thư viện bản đồ và nền bản đồ cần kết nối mạng khi mở. OpenFreeMap yêu cầu ghi nguồn OpenMapTiles/OpenStreetMap; dòng ghi nguồn nằm ở góc dưới bản đồ.
+Mở `http://localhost:8000/web/`. Bản đồ dùng nền vector OpenFreeMap (dữ liệu OpenStreetMap) qua Leaflet và MapLibre, có bộ lọc giai đoạn, số vụ tối thiểu, chỉ cụm có tử vong và cách xếp hạng. Tùy chọn **Hiện điểm nhiễu DBSCAN** vẽ riêng mọi tọa độ có nhãn `cluster = -1` bằng các dấu vuông xám; lớp này không chịu bộ lọc số vụ/cụm. Chọn một cụm để xem các tọa độ va chạm có nhiều vụ nhất trong cụm đó. Dữ liệu chi tiết từng vị trí được xuất cho 20 cụm nhiều vụ nhất mỗi giai đoạn, tối đa 1.500 vị trí/cụm; giao diện ghi rõ khi chỉ hiện một phần. Dữ liệu vụ tai nạn lưu trên máy, còn thư viện bản đồ và nền bản đồ cần kết nối mạng khi mở. OpenFreeMap yêu cầu ghi nguồn OpenMapTiles/OpenStreetMap; dòng ghi nguồn nằm ở góc dưới bản đồ.
 
 Trên máy hiện tại, lệnh `python` trong PATH có thể trỏ tới Windows Store alias. Có thể chạy server bằng Python đã dùng để tạo dữ liệu:
 
