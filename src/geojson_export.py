@@ -167,6 +167,30 @@ def export_period_geojson(
         marker_represents="observed crash location nearest geometric center",
     )
 
+    noise_locations = location_df[location_df["cluster"].eq(-1)]
+    noise_features = [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(row.lon_round), float(row.lat_round)],
+            },
+            "properties": {
+                "crashes": int(row.crash_count),
+                "injured": int(row.injured),
+                "killed": int(row.killed),
+            },
+        }
+        for row in noise_locations.itertuples(index=False)
+    ]
+    _write_geojson(
+        data_dir / f"noise_{safe_period}.geojson",
+        noise_features,
+        period=period,
+        total_locations=len(noise_features),
+        total_crashes=int(noise_locations["crash_count"].sum()),
+    )
+
     detail_locations = location_df[location_df["cluster"].isin(detail_ids)]
     for cluster_id, group in detail_locations.groupby("cluster"):
         group = group.nlargest(detail_max_locations, "crash_count")
@@ -202,6 +226,7 @@ def export_browser_bundle(data_dir: Path, periods: list[str]) -> Path:
     """Package GeoJSON for browsers that open index.html via file://."""
     period_data: dict[str, dict] = {}
     details: dict[str, dict] = {}
+    noise_data: dict[str, dict] = {}
     for period in periods:
         safe_period = period.replace("–", "_").replace("-", "_")
         path = data_dir / f"hotspots_{safe_period}.geojson"
@@ -213,12 +238,29 @@ def export_browser_bundle(data_dir: Path, periods: list[str]) -> Path:
                 details[detail_file] = json.loads(
                     (data_dir / detail_file).read_text(encoding="utf-8")
                 )
+        noise_path = data_dir / f"noise_{safe_period}.geojson"
+        noise_collection = json.loads(noise_path.read_text(encoding="utf-8"))
+        noise_data[period] = {
+            "total_locations": int(noise_collection["total_locations"]),
+            "total_crashes": int(noise_collection["total_crashes"]),
+            "points": [
+                [
+                    *feature["geometry"]["coordinates"],
+                    feature["properties"]["crashes"],
+                    feature["properties"]["injured"],
+                    feature["properties"]["killed"],
+                ]
+                for feature in noise_collection["features"]
+            ],
+        }
     bundle_path = data_dir / "bundle.js"
     bundle_path.write_text(
         "window.NYC_HOTSPOT_DATA="
         + json.dumps(period_data, ensure_ascii=False, separators=(",", ":"))
         + ";\nwindow.NYC_HOTSPOT_DETAILS="
         + json.dumps(details, ensure_ascii=False, separators=(",", ":"))
+        + ";\nwindow.NYC_HOTSPOT_NOISE="
+        + json.dumps(noise_data, ensure_ascii=False, separators=(",", ":"))
         + ";\n",
         encoding="utf-8",
     )
