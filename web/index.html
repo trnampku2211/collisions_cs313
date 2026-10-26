@@ -34,21 +34,21 @@
               </label>
               <label>
                 <input type="radio" name="color-mode" value="cluster" />
-                <span>Theo cụm DBSCAN</span>
+                <span>Tô màu cụm</span>
               </label>
             </div>
             <p id="color-mode-note" class="control-note">Màu xanh và đỏ phân biệt hai giai đoạn phân tích.</p>
           </fieldset>
 
-          <fieldset class="period-fieldset">
+          <fieldset class="period-fieldset" data-comparison-block>
             <legend id="period-legend">Giai đoạn</legend>
-            <label class="period-option"><input type="checkbox" id="period-before" checked /> <span class="swatch swatch-blue"></span> 2017–2019</label>
-            <label class="period-option"><input type="checkbox" id="period-after" checked /> <span class="swatch swatch-red"></span> 2020–2022</label>
+            <label class="period-option"><input type="checkbox" id="period-before" data-comparison-control checked /> <span class="swatch swatch-blue"></span> 2017–2019</label>
+            <label class="period-option"><input type="checkbox" id="period-after" data-comparison-control checked /> <span class="swatch swatch-red"></span> 2020–2022</label>
           </fieldset>
 
-          <div class="form-row">
+          <div class="form-row" data-comparison-block>
             <label for="min-crashes">Ít nhất bao nhiêu vụ/cụm?</label>
-            <select id="min-crashes">
+            <select id="min-crashes" data-comparison-control>
               <option value="30" selected>30 vụ</option>
               <option value="50">50 vụ</option>
               <option value="75">75 vụ</option>
@@ -63,9 +63,9 @@
             </select>
           </div>
 
-          <div class="form-row">
+          <div class="form-row" data-comparison-block>
             <label for="sort-metric">Xếp theo</label>
-            <select id="sort-metric">
+            <select id="sort-metric" data-comparison-control>
               <option value="crashes">Số vụ</option>
               <option value="injured">Số người bị thương</option>
               <option value="killed">Số người tử vong</option>
@@ -74,9 +74,9 @@
             </select>
           </div>
 
-          <div class="form-row">
+          <div class="form-row" data-comparison-block>
             <label for="display-limit">Hiện tối đa</label>
-            <select id="display-limit">
+            <select id="display-limit" data-comparison-control>
               <option value="50">50 cụm / giai đoạn</option>
               <option value="100" selected>100 cụm / giai đoạn</option>
               <option value="300">300 cụm / giai đoạn</option>
@@ -84,9 +84,7 @@
             </select>
           </div>
 
-          <label class="check-row"><input type="checkbox" id="fatal-only" /> Chỉ cụm có tử vong</label>
-          <label class="check-row"><input type="checkbox" id="show-noise" /> Hiện điểm nhiễu DBSCAN</label>
-          <p class="control-note noise-control-note">Noise là các tọa độ không đủ mật độ để thuộc một cụm; không chịu bộ lọc số vụ/cụm.</p>
+          <label class="check-row" data-comparison-block><input type="checkbox" id="fatal-only" data-comparison-control /> Chỉ cụm có tử vong</label>
         </section>
 
         <section class="summary-section" aria-label="Tóm tắt kết quả">

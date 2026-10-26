@@ -1,8 +1,8 @@
 "use strict";
 
 const DATA_FILES = [
-  { period: "2017-2019", file: "data/hotspots_2017_2019.geojson", noiseFile: "data/noise_2017_2019.geojson", color: "#2166ac", toggle: "period-before" },
-  { period: "2020-2022", file: "data/hotspots_2020_2022.geojson", noiseFile: "data/noise_2020_2022.geojson", color: "#b2182b", toggle: "period-after" },
+  { period: "2017-2019", file: "data/hotspots_2017_2019.geojson", color: "#2166ac", toggle: "period-before" },
+  { period: "2020-2022", file: "data/hotspots_2020_2022.geojson", color: "#b2182b", toggle: "period-after" },
 ];
 
 // Bright subset derived from Colorcet's glasbey_light palette. Near-black,
@@ -14,10 +14,7 @@ const GLASBEY_20 = [
   "#ff3465", "#a0e492", "#72b9ff", "#e58fff", "#00d494",
 ];
 
-const map = L.map("map", { preferCanvas: true, zoomControl: false }).setView([40.7128, -74.0060], 11);
-map.createPane("noisePane");
-map.getPane("noisePane").style.zIndex = 350;
-map.getPane("noisePane").style.pointerEvents = "none";
+const map = L.map("map", { preferCanvas: true, zoomControl: false }).setView([40.7128, -74.0060], 12);
 L.control.zoom({ position: "topright" }).addTo(map);
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 L.maplibreGL({ style: "https://tiles.openfreemap.org/styles/positron" }).addTo(map);
@@ -27,13 +24,14 @@ map.attributionControl.addAttribution(
 
 const ui = {
   colorModes: [...document.querySelectorAll('input[name="color-mode"]')],
+  comparisonControls: [...document.querySelectorAll("[data-comparison-control]")],
+  comparisonBlocks: [...document.querySelectorAll("[data-comparison-block]")],
   colorModeNote: document.getElementById("color-mode-note"),
   periodLegend: document.getElementById("period-legend"),
   minCrashes: document.getElementById("min-crashes"),
   sortMetric: document.getElementById("sort-metric"),
   displayLimit: document.getElementById("display-limit"),
   fatalOnly: document.getElementById("fatal-only"),
-  showNoise: document.getElementById("show-noise"),
   resultCount: document.getElementById("result-count"),
   clusterList: document.getElementById("cluster-list"),
   loading: document.getElementById("loading-state"),
@@ -44,72 +42,12 @@ const ui = {
 };
 
 const periodData = new Map();
-const periodNoise = new Map();
 const periodLayers = new Map();
 const markerLookup = new Map();
 const clusterPaletteLookup = new Map();
 let detailLayer = null;
-let noiseLayer = null;
 let selectedKey = null;
-const DETAIL_ZOOM = 14;
-
-const NoiseCanvasLayer = L.Layer.extend({
-  initialize(points, options = {}) {
-    this.points = points;
-    this.options = { color: "#4c5965", opacity: 0.3, ...options };
-  },
-  onAdd(mapInstance) {
-    this.mapInstance = mapInstance;
-    this.canvas = L.DomUtil.create("canvas", "noise-canvas-layer");
-    mapInstance.getPane("noisePane").appendChild(this.canvas);
-    mapInstance.on("movestart zoomstart", this.hide, this);
-    mapInstance.on("moveend zoomend resize viewreset", this.showAndRedraw, this);
-    this.redraw();
-  },
-  onRemove(mapInstance) {
-    mapInstance.off("movestart zoomstart", this.hide, this);
-    mapInstance.off("moveend zoomend resize viewreset", this.showAndRedraw, this);
-    if (this.frame) L.Util.cancelAnimFrame(this.frame);
-    this.canvas.remove();
-  },
-  hide() {
-    if (!this.canvas) return;
-    this.canvas.style.visibility = "hidden";
-    this.canvas.getContext("2d").clearRect(0, 0, this.canvas.width, this.canvas.height);
-  },
-  showAndRedraw() {
-    if (!this.canvas) return;
-    this.canvas.style.visibility = "hidden";
-    if (this.frame) L.Util.cancelAnimFrame(this.frame);
-    this.frame = L.Util.requestAnimFrame(() => {
-      this.frame = null;
-      if (!this.canvas) return;
-      this.redraw();
-      this.canvas.style.visibility = "visible";
-    });
-  },
-  redraw() {
-    const size = this.mapInstance.getSize();
-    const ratio = window.devicePixelRatio || 1;
-    const topLeft = this.mapInstance.containerPointToLayerPoint([0, 0]);
-    L.DomUtil.setPosition(this.canvas, topLeft);
-    this.canvas.width = Math.round(size.x * ratio);
-    this.canvas.height = Math.round(size.y * ratio);
-    this.canvas.style.width = `${size.x}px`;
-    this.canvas.style.height = `${size.y}px`;
-    const context = this.canvas.getContext("2d");
-    context.scale(ratio, ratio);
-    context.fillStyle = this.options.color;
-    context.globalAlpha = this.options.opacity;
-    const bounds = this.mapInstance.getBounds().pad(0.04);
-    for (const [longitude, latitude, crashes] of this.points) {
-      if (!bounds.contains([latitude, longitude])) continue;
-      const point = this.mapInstance.latLngToContainerPoint([latitude, longitude]);
-      const diameter = Math.min(5, 2 + Math.sqrt(crashes || 1) * 0.55);
-      context.fillRect(point.x - diameter / 2, point.y - diameter / 2, diameter, diameter);
-    }
-  },
-});
+const DETAIL_ZOOM = 12;
 
 function colorMode() {
   return document.querySelector('input[name="color-mode"]:checked')?.value ?? "period";
@@ -127,7 +65,7 @@ function clusterColors(period, clusterId) {
   const base = GLASBEY_20[clusterPaletteLookup.get(key) ?? fallback];
   return {
     stroke: mixHex(base, [18, 30, 42], 0.2),
-    fill: mixHex(base, [255, 255, 255], 0.5),
+    fill: mixHex(base, [255, 255, 255], 0.42),
   };
 }
 
@@ -165,43 +103,21 @@ function enforceSingleClusterPeriod(changedToggle = null) {
 
 function updateModeGuidance() {
   const clusterMode = colorMode() === "cluster";
-  const noiseSuffix = ui.showNoise.checked
-    ? " Chấm vuông xám là các tọa độ noise (cluster = -1)."
-    : "";
-  ui.periodLegend.textContent = clusterMode ? "Giai đoạn (chọn một)" : "Giai đoạn";
+  for (const control of ui.comparisonControls) control.disabled = clusterMode;
+  for (const block of ui.comparisonBlocks) {
+    block.classList.toggle("is-disabled", clusterMode);
+    block.setAttribute("aria-disabled", String(clusterMode));
+  }
+  ui.periodLegend.textContent = "Giai đoạn";
   ui.colorModeNote.textContent = clusterMode
-    ? `Các chấm cùng màu là những vị trí thuộc cùng một cụm DBSCAN.${noiseSuffix}`
-    : `Màu xanh và đỏ phân biệt hai giai đoạn phân tích.${noiseSuffix}`;
+    ? "Các chấm cùng màu là những vị trí thuộc cùng một cụm DBSCAN. Các tham số bên dưới chỉ điều chỉnh được trong chế độ So sánh thời gian."
+    : "Màu xanh và đỏ phân biệt hai giai đoạn phân tích.";
   ui.summaryNote.textContent = clusterMode
-    ? "Vòng có viền đậm đánh dấu điểm đại diện. Phóng to mức 14 để xem mẫu vị trí của 20 cụm nhiều vụ nhất."
-    : "Vòng tròn đặt tại tọa độ va chạm gần tâm cụm nhất. Bấm một cụm và phóng to mức 14 để xem các vị trí tai nạn.";
+    ? `Vòng có viền đậm đánh dấu điểm đại diện. Phóng to mức ${DETAIL_ZOOM} để xem mẫu vị trí của 20 cụm nhiều vụ nhất.`
+    : `Vòng tròn đặt tại tọa độ va chạm gần tâm cụm nhất. Bấm một cụm và phóng to mức ${DETAIL_ZOOM} để xem các vị trí tai nạn.`;
   ui.mapCaption.innerHTML = clusterMode
     ? '<span class="cluster-spectrum"></span><strong>Cùng màu = cùng cụm</strong><span class="caption-hint">Ruột nhạt + viền đậm · vòng lớn = tâm đại diện</span>'
     : '<span class="caption-dot caption-blue"></span> 2017–2019 <span class="caption-dot caption-red"></span> 2020–2022 <span class="caption-hint">Kích thước vòng tròn ∝ căn bậc hai số vụ</span>';
-  if (ui.showNoise.checked) {
-    ui.mapCaption.insertAdjacentHTML("beforeend", '<span class="caption-dot caption-noise"></span> Noise DBSCAN');
-  }
-}
-
-function compactNoise(collection) {
-  return {
-    total_locations: Number(collection.total_locations) || collection.features.length,
-    total_crashes: Number(collection.total_crashes) || 0,
-    points: collection.features.map((feature) => [
-      ...feature.geometry.coordinates,
-      feature.properties.crashes,
-      feature.properties.injured,
-      feature.properties.killed,
-    ]),
-  };
-}
-
-async function loadNoise(config) {
-  const bundled = window.NYC_HOTSPOT_NOISE?.[config.period];
-  if (bundled) return bundled;
-  const response = await fetch(config.noiseFile);
-  if (!response.ok) throw new Error(`${config.noiseFile}: HTTP ${response.status}`);
-  return compactNoise(await response.json());
 }
 
 function bundledDetail(feature) {
@@ -209,7 +125,7 @@ function bundledDetail(feature) {
   return path ? window.NYC_HOTSPOT_DETAILS?.[path] ?? null : null;
 }
 
-function sampleMemberLocations(geojson, maxPoints = 600) {
+function sampleMemberLocations(geojson, maxPoints = 1500) {
   const features = geojson?.features ?? [];
   if (features.length <= maxPoints) return features;
   const step = features.length / maxPoints;
@@ -478,25 +394,6 @@ function renderClusterMembersLayer(features) {
   return { layer, shownLocations };
 }
 
-function renderNoiseLayer() {
-  if (noiseLayer) map.removeLayer(noiseLayer);
-  noiseLayer = null;
-  if (!ui.showNoise.checked) return { locations: 0, crashes: 0 };
-  const layers = [];
-  let locations = 0;
-  let crashes = 0;
-  for (const config of DATA_FILES) {
-    if (!document.getElementById(config.toggle).checked) continue;
-    const noise = periodNoise.get(config.period);
-    if (!noise) continue;
-    locations += noise.total_locations;
-    crashes += noise.total_crashes;
-    layers.push(new NoiseCanvasLayer(noise.points));
-  }
-  noiseLayer = L.layerGroup(layers).addTo(map);
-  return { locations, crashes };
-}
-
 function render(preserveSelection = false) {
   const previousKey = preserveSelection === true ? selectedKey : null;
   updateModeGuidance();
@@ -518,13 +415,12 @@ function render(preserveSelection = false) {
     const layer = rendered.layer.addTo(map);
     periodLayers.set(config.period, layer);
   }
-  const noise = renderNoiseLayer();
   const crashes = allVisible.reduce((sum, feature) => sum + feature.properties.crashes, 0);
   ui.resultCount.textContent = clusterMode
     ? map.getZoom() < DETAIL_ZOOM
-      ? `${formatNumber(allVisible.length)} cụm · phóng to mức ${DETAIL_ZOOM} để xem vị trí mẫu${noise.locations ? ` · ${formatNumber(noise.locations)} tọa độ noise` : ""}`
-      : `${formatNumber(allVisible.length)} cụm · ${formatNumber(shownLocations)} vị trí mẫu được hiển thị${noise.locations ? ` · ${formatNumber(noise.locations)} tọa độ noise` : ""}`
-    : `${formatNumber(allVisible.length)} cụm · ${formatNumber(crashes)} vụ được hiển thị${noise.locations ? ` · ${formatNumber(noise.locations)} tọa độ noise (${formatNumber(noise.crashes)} vụ)` : ""}`;
+      ? `${formatNumber(allVisible.length)} cụm · phóng to mức ${DETAIL_ZOOM} để xem vị trí mẫu`
+      : `${formatNumber(allVisible.length)} cụm · ${formatNumber(shownLocations)} vị trí mẫu được hiển thị`
+    : `${formatNumber(allVisible.length)} cụm · ${formatNumber(crashes)} vụ được hiển thị`;
   renderList(allVisible);
   const previousFeature = allVisible.find((feature) => `${feature.properties.period}:${feature.properties.cluster_id}` === previousKey);
   if (previousFeature) {
@@ -546,12 +442,10 @@ async function init() {
       if (data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
         throw new Error(`GeoJSON không hợp lệ: ${config.file}`);
       }
-      const noise = await loadNoise(config);
-      return [config.period, data, noise];
+      return [config.period, data];
     }));
-    for (const [period, data, noise] of results) {
+    for (const [period, data] of results) {
       periodData.set(period, data);
-      periodNoise.set(period, noise);
     }
     assignClusterPalette();
     ui.loading.hidden = true;
@@ -575,7 +469,7 @@ for (const input of ui.colorModes) {
     render();
   });
 }
-for (const id of ["sort-metric", "display-limit", "fatal-only", "show-noise"]) {
+for (const id of ["sort-metric", "display-limit", "fatal-only"]) {
   document.getElementById(id).addEventListener("change", render);
 }
 ui.minCrashes.addEventListener("change", render);
